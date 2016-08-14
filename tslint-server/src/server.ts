@@ -128,7 +128,7 @@ function makeDiagnostic(problem: TSLintProblem): server.Diagnostic {
 let codeActions: Map<Map<AutoFix>> = Object.create(null);
 function recordCodeAction(document: server.TextDocument, diagnostic: server.Diagnostic, problem: TSLintProblem): void {
 
-	let afix = autofix.tsLintAutoFixes.filter(autoFix => autoFix.tsLintMessage === problem.failure);
+	let afix = autofix.tsLintAutoFixes.filter(autoFix => autoFix.tsLintMessage.toLowerCase() === problem.failure.toLocaleLowerCase());
 	if (afix.length > 0) {
 		// create an autoFixEntry for the document in the codeActions
 		let uri = document.uri;
@@ -236,10 +236,21 @@ connection.onInitialize((params): Thenable<server.InitializeResult | server.Resp
 			let result: server.InitializeResult = { capabilities: { textDocumentSync: documents.syncKind, codeActionProvider: true } };
 			return result;
 		}, (error) => {
+			// We only want to show the tslint load failed error, when the workspace is configured for tslint.
+			// However, only tslint knows whether a config file exists, but since we cannot load it we cannot ask it.
+			// For now we hard code a common case and only show the error in this case.
+			if (fs.existsSync('tslint.json')) {
+				return Promise.reject(
+					new server.ResponseError<server.InitializeError>(99,
+						tslintNotFound,
+						{ retry: true }));
+			}
+			// Respond that initialization failed silently, without prompting the user.
+			connection.console.log('vscode-tslint: could not load tslint');
 			return Promise.reject(
 				new server.ResponseError<server.InitializeError>(99,
-					tslintNotFound,
-					{ retry: true }));
+					null, // do not show an error message
+					{ retry: false }));
 		});
 });
 
@@ -327,6 +338,11 @@ function fileIsExcluded(path: string): boolean {
 documents.onDidChangeContent((event) => {
 	// the contents of a text document has changed, trigger a delayed validation
 	triggerValidateDocument(event.document);
+});
+
+// A text document was closed. Clear the diagnostics .
+documents.onDidClose((event) => {
+	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 });
 
 function triggerValidateDocument(document: server.TextDocument) {
@@ -481,7 +497,7 @@ connection.onCodeAction((params) => {
 						uri,
 						documentVersion, same.map(createTextEdit)));
 			}
-			
+
 			// propose to fix all
 			if (all.length > 1) {
 				result.push(

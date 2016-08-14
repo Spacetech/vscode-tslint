@@ -25,11 +25,22 @@ autoFix = {
 this.tsLintAutoFixes.push(autoFix);
 
 autoFix = {
-	tsLintCode: "one-line",
-	tsLintMessage: "missing semicolon",
+	tsLintCode: "semicolon",
+	tsLintMessage: "Missing semicolon",
 	autoFixMessage: "Add semicolon",
 	autoFix: (codeBefore: string): string => {
 		let codeAfter = codeBefore + ";";
+		return codeAfter;
+	}
+};
+this.tsLintAutoFixes.push(autoFix);
+
+autoFix = {
+	tsLintCode: "trailing-comma",
+	tsLintMessage: "missing trailing comma",
+	autoFixMessage: "Add trailing comma",
+	autoFix: (codeBefore: string): string => {
+		let codeAfter = codeBefore + ",";
 		return codeAfter;
 	}
 };
@@ -93,6 +104,16 @@ autoFix = {
 this.tsLintAutoFixes.push(autoFix);
 
 autoFix = {
+	tsLintCode: "no-var-keyword",
+	tsLintMessage: "Forbidden 'var' keyword, use 'let' or 'const' instead",
+	autoFixMessage: "Replace var by let",
+	autoFix: (codeBefore: string): string => {
+		let codeAfter = "let";
+		return codeAfter;
+	}
+};
+this.tsLintAutoFixes.push(autoFix);
+autoFix = {
 	tsLintCode: "eofline",
 	tsLintMessage: "file should end with a newline",
 	autoFixMessage: "add new line",
@@ -105,7 +126,7 @@ this.tsLintAutoFixes.push(autoFix);
 
 autoFix = {
 	tsLintCode: "no-var-keyword",
-	tsLintMessage: "forbidden 'var' keyword, use 'let' or 'const' instead",
+	tsLintMessage: "Forbidden 'var' keyword, use 'let' or 'const' instead",
 	autoFixMessage: "Replace var by let",
 	autoFix: (codeBefore: string): string => {
 		let codeAfter = "let";
